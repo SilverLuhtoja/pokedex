@@ -1,5 +1,7 @@
 package main
 
 func main() {
-	initApp()
+	cfg := &Config{}
+
+	initApp(cfg)
 }
