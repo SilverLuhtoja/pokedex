@@ -1,11 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
 	"os"
 )
 
@@ -24,13 +20,13 @@ func getCommands() map[string]CliCommand {
 		"map": {
 			name:        "map",
 			description: "Displays names of 20 next location areas",
-			callback:    mapCommand,
+			callback:    mapForward,
 		},
-		// "mapb": {
-		// 	name:        "mapb",
-		// 	description: "Displays previous 20 location areas",
-		// 	callback:    commands.ExitCommand,
-		// },
+		"mapb": {
+			name:        "mapb",
+			description: "Displays previous 20 location areas",
+			callback:    mapBack,
+		},
 	}
 }
 
@@ -51,39 +47,39 @@ func ExitCommand(cfg *Config) error {
 	return nil
 }
 
-// func mapCommand(conf *config) error {
-
-func mapCommand(cfg *Config) error {
-	var location_endpoint string = "https://pokeapi.co/api/v2/location/"
-	res, err := http.Get(location_endpoint)
-
+func mapForward(cfg *Config) error {
+	locations, err := cfg.Client.GetLocations(cfg.Next, cfg.Cache)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	body, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
-	if res.StatusCode > 299 {
-		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
+	cfg.Next = locations.Next
+	cfg.Previous = locations.Previous
 
-	response := LocationResponse{}
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		fmt.Println(err)
+	for _, area := range locations.Results {
+		fmt.Println(area.Name)
 	}
-
-	// LocationResponse
-	fmt.Println(response)
 
 	return nil
-
 }
 
-// if on first page, give error
-// func mapBackCommand(conf *config) error {
-// return nil
-// }
+func mapBack(cfg *Config) error {
+	if cfg.Previous == nil {
+		fmt.Println("On First page, cant go back.")
+		return nil
+	}
+
+	locations, err := cfg.Client.GetLocations(cfg.Previous, cfg.Cache)
+	if err != nil {
+		return err
+	}
+
+	cfg.Next = locations.Next
+	cfg.Previous = locations.Previous
+
+	for _, area := range locations.Results {
+		fmt.Println(area.Name)
+	}
+
+	return nil
+}
