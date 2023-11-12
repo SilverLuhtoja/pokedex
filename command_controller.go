@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/fatih/color"
 )
 
 func getCommands() map[string]CliCommand {
@@ -27,10 +29,15 @@ func getCommands() map[string]CliCommand {
 			description: "Displays previous 20 location areas",
 			callback:    mapBack,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Explore areas for pokemons",
+			callback:    explore,
+		},
 	}
 }
 
-func helpCommand(cfg *Config) error {
+func helpCommand(cfg *Config, _ string) error {
 	fmt.Println()
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
@@ -42,12 +49,12 @@ func helpCommand(cfg *Config) error {
 	return nil
 }
 
-func ExitCommand(cfg *Config) error {
+func ExitCommand(cfg *Config, _ string) error {
 	os.Exit(1)
 	return nil
 }
 
-func mapForward(cfg *Config) error {
+func mapForward(cfg *Config, _ string) error {
 	locations, err := cfg.Client.GetLocations(cfg.Next, cfg.Cache)
 	if err != nil {
 		return err
@@ -63,9 +70,9 @@ func mapForward(cfg *Config) error {
 	return nil
 }
 
-func mapBack(cfg *Config) error {
+func mapBack(cfg *Config, _ string) error {
 	if cfg.Previous == nil {
-		fmt.Println("On First page, cant go back.")
+		color.Red("On First page, cant go back.")
 		return nil
 	}
 
@@ -79,6 +86,19 @@ func mapBack(cfg *Config) error {
 
 	for _, area := range locations.Results {
 		fmt.Println(area.Name)
+	}
+
+	return nil
+}
+
+func explore(cfg *Config, areaName string) error {
+	pokemons, err := cfg.Client.GetExploreLocation(areaName, cfg.Cache)
+	if err != nil {
+		return err
+	}
+
+	for _, encounter := range pokemons.PokemonEncounters {
+		fmt.Println(encounter.Pokemon.Name)
 	}
 
 	return nil

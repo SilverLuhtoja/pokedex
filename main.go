@@ -4,15 +4,15 @@ import (
 	"time"
 
 	pokeapi "github.com/SilverLuhtoja/pokedex/internal/pokeapi"
-	"github.com/SilverLuhtoja/pokedex/internal/pokecache"
+	pokecache "github.com/SilverLuhtoja/pokedex/internal/pokecache"
 )
 
 func main() {
-	cache := pokecache.NewCache(5 * time.Second)
+	cache := pokecache.NewCache(10 * time.Second)
 	client := pokeapi.NewClient()
 	cfg := &Config{
 		Client: client,
-		Cache:  &cache,
+		Cache:  cache,
 	}
 
 	initApp(cfg)

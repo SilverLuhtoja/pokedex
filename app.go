@@ -11,7 +11,7 @@ func initApp(cfg *Config) {
 	fmt.Println(cfg.Client.BaseURL)
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Print("Pokedex > ")
+		fmt.Print("\033[35mPokedex >\033[0m ")
 		scanner.Scan()
 
 		input := cleanInput(scanner.Text())
@@ -20,8 +20,13 @@ func initApp(cfg *Config) {
 		}
 
 		givenCommand := input[0]
+		var secondOption string = ""
+		if len(input) > 1 {
+			secondOption = input[1]
+		}
+
 		if command, ok := getCommands()[givenCommand]; ok {
-			err := command.callback(cfg)
+			err := command.callback(cfg, secondOption)
 			if err != nil {
 				fmt.Println(err)
 			}

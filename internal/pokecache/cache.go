@@ -3,8 +3,6 @@ package pokecache
 import (
 	"sync"
 	"time"
-
-	"github.com/fatih/color"
 )
 
 type cacheEntry struct {
@@ -18,17 +16,21 @@ type Cache struct {
 	timeout   time.Duration
 }
 
-func NewCache(interval time.Duration) Cache {
-	return Cache{timeout: interval}
+func NewCache(interval time.Duration) *Cache {
+	cache := &Cache{
+		cacheData: make(map[string]cacheEntry),
+		timeout:   interval,
+	}
+
+	go cache.readLoop()
+
+	return cache
 }
 
 func (c *Cache) Add(key string, val []byte) {
-	color.Blue("ADDING TO CACHE")
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	if c.cacheData == nil {
-		c.cacheData = make(map[string]cacheEntry)
-	}
+
 	entry := cacheEntry{
 		createdAt: time.Now(),
 		val:       val,
@@ -36,17 +38,33 @@ func (c *Cache) Add(key string, val []byte) {
 	c.cacheData[key] = entry
 }
 
-func (c *Cache) Get(key *string) ([]byte, bool) {
-	color.Blue("READING FROM CACHE")
+func (c *Cache) Get(key string) ([]byte, bool) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	if key == nil {
-		return nil, false
-	}
 
-	entry, ok := c.cacheData[*key]
+	entry, ok := c.cacheData[key]
 	if !ok {
 		return nil, false
 	}
 	return entry.val, ok
+}
+
+func (c *Cache) readLoop() {
+	ticker := time.NewTicker(c.timeout)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		c.deleteFromMap()
+	}
+
+}
+
+func (c *Cache) deleteFromMap() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	for key, value := range c.cacheData {
+		if time.Since(value.createdAt) > c.timeout {
+			delete(c.cacheData, key)
+		}
+	}
 }
