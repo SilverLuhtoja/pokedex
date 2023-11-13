@@ -20,13 +20,13 @@ func initApp(cfg *Config) {
 		}
 
 		givenCommand := input[0]
-		var secondOption string = ""
+		args := []string{}
 		if len(input) > 1 {
-			secondOption = input[1]
+			args = input[1:]
 		}
 
 		if command, ok := getCommands()[givenCommand]; ok {
-			err := command.callback(cfg, secondOption)
+			err := command.callback(cfg, args...)
 			if err != nil {
 				fmt.Println(err)
 			}

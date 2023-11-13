@@ -7,8 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	pokecache "github.com/SilverLuhtoja/pokedex/internal/pokecache"
-	"github.com/fatih/color"
+	cache "github.com/SilverLuhtoja/pokedex/internal/pokecache"
 )
 
 func NewClient() Client {
@@ -18,13 +17,28 @@ func NewClient() Client {
 	}
 }
 
-func (c *Client) GetExploreLocation(exploreArea string, cache *pokecache.Cache) (ExploreResponse, error) {
-	if exploreArea == "" {
-		color.Red("Can't explore without area name. ")
-		return ExploreResponse{}, nil
+func (c *Client) GetPokemon(cache *cache.Cache, pokemon_name string) (Pokemon, error) {
+	url := c.BaseURL + "/pokemon/" + pokemon_name
+	responseBody, ok := cache.Get(url)
+	if !ok {
+		res, err := c.GetRawResponse(url)
+		if err != nil {
+			return Pokemon{}, err
+		}
+
+		cache.Add(url, res)
+		responseBody = res
+	}
+	pokemon, err := ConvertToDomain[Pokemon](responseBody)
+	if err != nil {
+		return Pokemon{}, err
 	}
 
-	url := c.BaseURL + "/location-area/" + exploreArea
+	return pokemon, nil
+}
+
+func (c *Client) GetExploreLocation(cache *cache.Cache, areaName string) (ExploreResponse, error) {
+	url := c.BaseURL + "/location-area/" + areaName
 
 	responseBody, ok := cache.Get(url)
 
@@ -44,7 +58,7 @@ func (c *Client) GetExploreLocation(exploreArea string, cache *pokecache.Cache) 
 	return pokemons, nil
 }
 
-func (c *Client) GetLocations(pageURL *string, cache *pokecache.Cache) (LocationResponse, error) {
+func (c *Client) GetLocations(pageURL *string, cache *cache.Cache) (LocationResponse, error) {
 	url := c.BaseURL + "/location-area"
 	if pageURL != nil {
 		url = *pageURL

@@ -8,7 +8,7 @@ import (
 type CliCommand struct {
 	name        string
 	description string
-	callback    func(*Config, string) error
+	callback    func(*Config, ...string) error
 }
 
 type Config struct {
@@ -16,4 +16,5 @@ type Config struct {
 	Client   pokeapi.Client
 	Next     *string
 	Previous *string
+	Pokedex  map[string]pokeapi.Pokemon
 }

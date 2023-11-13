@@ -19,15 +19,13 @@ type LocationResponse struct {
 	Results  []Location `json:"results"`
 }
 
-type Pokemon struct {
-	Pokemon struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"pokemon"`
-}
-
 type ExploreResponse struct {
-	PokemonEncounters []Pokemon `json:"pokemon_encounters"`
+	PokemonEncounters []struct {
+		Pokemon struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
 }
 
 type Resource interface {

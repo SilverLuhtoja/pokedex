@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/fatih/color"
@@ -30,14 +32,19 @@ func getCommands() map[string]CliCommand {
 			callback:    mapBack,
 		},
 		"explore": {
-			name:        "explore",
+			name:        "explore <location-name>",
 			description: "Explore areas for pokemons",
 			callback:    explore,
+		},
+		"catch": {
+			name:        "catch <pokemon-name>",
+			description: "Try to catch a pokemon",
+			callback:    catch,
 		},
 	}
 }
 
-func helpCommand(cfg *Config, _ string) error {
+func helpCommand(cfg *Config, args ...string) error {
 	fmt.Println()
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
@@ -49,12 +56,12 @@ func helpCommand(cfg *Config, _ string) error {
 	return nil
 }
 
-func ExitCommand(cfg *Config, _ string) error {
+func ExitCommand(cfg *Config, args ...string) error {
 	os.Exit(1)
 	return nil
 }
 
-func mapForward(cfg *Config, _ string) error {
+func mapForward(cfg *Config, args ...string) error {
 	locations, err := cfg.Client.GetLocations(cfg.Next, cfg.Cache)
 	if err != nil {
 		return err
@@ -70,7 +77,7 @@ func mapForward(cfg *Config, _ string) error {
 	return nil
 }
 
-func mapBack(cfg *Config, _ string) error {
+func mapBack(cfg *Config, args ...string) error {
 	if cfg.Previous == nil {
 		color.Red("On First page, cant go back.")
 		return nil
@@ -91,15 +98,51 @@ func mapBack(cfg *Config, _ string) error {
 	return nil
 }
 
-func explore(cfg *Config, areaName string) error {
-	pokemons, err := cfg.Client.GetExploreLocation(areaName, cfg.Cache)
+func explore(cfg *Config, args ...string) error {
+	if len(args) != 1 {
+		return errors.New("must provide a location name")
+	}
+	areaName := args[0]
+	pokemons, err := cfg.Client.GetExploreLocation(cfg.Cache, areaName)
 	if err != nil {
 		return err
 	}
 
-	for _, encounter := range pokemons.PokemonEncounters {
-		fmt.Println(encounter.Pokemon.Name)
+	fmt.Printf("Exploring %s...\n", areaName)
+	if len(pokemons.PokemonEncounters) > 0 {
+		fmt.Println("Found Pokemon:")
 	}
+	for _, encounter := range pokemons.PokemonEncounters {
+		fmt.Printf("- %s\n", encounter.Pokemon.Name)
+	}
+
+	return nil
+}
+
+func catch(cfg *Config, args ...string) error {
+	if len(args) != 1 {
+		return errors.New("must provide a pokemon name")
+	}
+
+	name := args[0]
+	if _, ok := cfg.Pokedex[name]; ok {
+		fmt.Println("Pokemon is already Caught")
+		return nil
+	}
+	pokemon, err := cfg.Client.GetPokemon(cfg.Cache, name)
+	if err != nil {
+		return err
+	}
+
+	randomInt := rand.Intn(pokemon.BaseExperience)
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemon.Name)
+	if randomInt < pokemon.BaseExperience/2 {
+		fmt.Printf("%s escaped!\n", pokemon.Name)
+		return nil
+	}
+
+	fmt.Printf("%s was caught!\n", pokemon.Name)
+	cfg.Pokedex[pokemon.Name] = pokemon
 
 	return nil
 }

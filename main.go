@@ -11,8 +11,9 @@ func main() {
 	cache := pokecache.NewCache(10 * time.Second)
 	client := pokeapi.NewClient()
 	cfg := &Config{
-		Client: client,
-		Cache:  cache,
+		Client:  client,
+		Cache:   cache,
+		Pokedex: map[string]pokeapi.Pokemon{},
 	}
 
 	initApp(cfg)
