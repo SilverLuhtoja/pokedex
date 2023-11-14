@@ -2,7 +2,6 @@ package main
 
 import (
 	pokeapi "github.com/SilverLuhtoja/pokedex/internal/pokeapi"
-	pokecache "github.com/SilverLuhtoja/pokedex/internal/pokecache"
 )
 
 type CliCommand struct {
@@ -12,7 +11,6 @@ type CliCommand struct {
 }
 
 type Config struct {
-	Cache    *pokecache.Cache
 	Client   pokeapi.Client
 	Next     *string
 	Previous *string

@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 
+	"github.com/SilverLuhtoja/pokedex/internal/pokeapi"
 	"github.com/fatih/color"
 )
 
@@ -41,6 +42,16 @@ func getCommands() map[string]CliCommand {
 			description: "Try to catch a pokemon",
 			callback:    catch,
 		},
+		"inspect": {
+			name:        "inspect <pokemon-name>",
+			description: "Inspect your pokeon",
+			callback:    inspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Shows pokedex content",
+			callback:    pokedex,
+		},
 	}
 }
 
@@ -62,7 +73,7 @@ func ExitCommand(cfg *Config, args ...string) error {
 }
 
 func mapForward(cfg *Config, args ...string) error {
-	locations, err := cfg.Client.GetLocations(cfg.Next, cfg.Cache)
+	locations, err := cfg.Client.GetLocations(cfg.Next)
 	if err != nil {
 		return err
 	}
@@ -83,7 +94,7 @@ func mapBack(cfg *Config, args ...string) error {
 		return nil
 	}
 
-	locations, err := cfg.Client.GetLocations(cfg.Previous, cfg.Cache)
+	locations, err := cfg.Client.GetLocations(cfg.Previous)
 	if err != nil {
 		return err
 	}
@@ -103,7 +114,7 @@ func explore(cfg *Config, args ...string) error {
 		return errors.New("must provide a location name")
 	}
 	areaName := args[0]
-	pokemons, err := cfg.Client.GetExploreLocation(cfg.Cache, areaName)
+	pokemons, err := cfg.Client.GetExploreLocation(areaName)
 	if err != nil {
 		return err
 	}
@@ -129,7 +140,8 @@ func catch(cfg *Config, args ...string) error {
 		fmt.Println("Pokemon is already Caught")
 		return nil
 	}
-	pokemon, err := cfg.Client.GetPokemon(cfg.Cache, name)
+
+	pokemon, err := cfg.Client.GetPokemon(name)
 	if err != nil {
 		return err
 	}
@@ -145,4 +157,45 @@ func catch(cfg *Config, args ...string) error {
 	cfg.Pokedex[pokemon.Name] = pokemon
 
 	return nil
+}
+
+func inspect(cfg *Config, args ...string) error {
+	if len(args) != 1 {
+		return errors.New("must provide a pokemon name")
+	}
+
+	name := args[0]
+	pokemon, ok := cfg.Pokedex[name]
+	if ok {
+		logPokemonStats(pokemon)
+		return nil
+	}
+
+	return errors.New("you dont have this pokemon with provided name")
+}
+
+func pokedex(cfg *Config, args ...string) error {
+	if len(cfg.Pokedex) < 1 {
+		fmt.Println("Pokedex is empty.")
+	}
+	for key := range cfg.Pokedex {
+		fmt.Printf("- %s\n", key)
+	}
+	return nil
+}
+
+func logPokemonStats(pokemon pokeapi.Pokemon) {
+	fmt.Printf("Name: %s\n", pokemon.Name)
+	fmt.Printf("Height: %v\n", pokemon.Height)
+	fmt.Printf("Weight: %v\n", pokemon.Weight)
+
+	fmt.Printf("Stats:\n")
+	for _, stat := range pokemon.Stats {
+		fmt.Printf("- %s: %v\n", stat.Stat.Name, stat.BaseStat)
+	}
+
+	fmt.Printf("Types:\n")
+	for _, types := range pokemon.Types {
+		fmt.Printf("- %s\n", types.Type.Name)
+	}
 }

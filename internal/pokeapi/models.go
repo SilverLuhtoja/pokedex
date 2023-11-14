@@ -1,8 +1,13 @@
 package pokeapi
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/SilverLuhtoja/pokedex/internal/pokecache"
+)
 
 type Client struct {
+	cache      pokecache.Cache
 	httpClient http.Client
 	BaseURL    string
 }
@@ -28,9 +33,32 @@ type ExploreResponse struct {
 	} `json:"pokemon_encounters"`
 }
 
+type Pokemon struct {
+	BaseExperience int    `json:"base_experience"`
+	Name           string `json:"name"`
+	Height         int    `json:"height"`
+	Weight         int    `json:"weight"`
+	Stats          []struct {
+		BaseStat int `json:"base_stat"`
+		Effort   int `json:"effort"`
+		Stat     struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Slot int `json:"slot"`
+		Type struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"type"`
+	} `json:"types"`
+}
+
 type Resource interface {
 	Resource()
 }
 
 func (loc LocationResponse) Resource() {}
 func (loc ExploreResponse) Resource()  {}
+func (loc Pokemon) Resource()          {}

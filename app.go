@@ -8,7 +8,6 @@ import (
 )
 
 func initApp(cfg *Config) {
-	fmt.Println(cfg.Client.BaseURL)
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("\033[35mPokedex >\033[0m ")

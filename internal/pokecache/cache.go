@@ -12,14 +12,15 @@ type cacheEntry struct {
 
 type Cache struct {
 	cacheData map[string]cacheEntry
-	mutex     sync.Mutex
+	mutex     *sync.Mutex
 	timeout   time.Duration
 }
 
-func NewCache(interval time.Duration) *Cache {
-	cache := &Cache{
+func NewCache(interval time.Duration) Cache {
+	cache := Cache{
 		cacheData: make(map[string]cacheEntry),
 		timeout:   interval,
+		mutex:     &sync.Mutex{},
 	}
 
 	go cache.readLoop()

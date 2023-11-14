@@ -6,27 +6,29 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
-	cache "github.com/SilverLuhtoja/pokedex/internal/pokecache"
+	pokecache "github.com/SilverLuhtoja/pokedex/internal/pokecache"
 )
 
 func NewClient() Client {
 	return Client{
+		cache:      pokecache.NewCache(10 * time.Second),
 		httpClient: http.Client{},
 		BaseURL:    "https://pokeapi.co/api/v2/",
 	}
 }
 
-func (c *Client) GetPokemon(cache *cache.Cache, pokemon_name string) (Pokemon, error) {
+func (c *Client) GetPokemon(pokemon_name string) (Pokemon, error) {
 	url := c.BaseURL + "/pokemon/" + pokemon_name
-	responseBody, ok := cache.Get(url)
+	responseBody, ok := c.cache.Get(url)
 	if !ok {
 		res, err := c.GetRawResponse(url)
 		if err != nil {
 			return Pokemon{}, err
 		}
 
-		cache.Add(url, res)
+		c.cache.Add(url, res)
 		responseBody = res
 	}
 	pokemon, err := ConvertToDomain[Pokemon](responseBody)
@@ -37,10 +39,10 @@ func (c *Client) GetPokemon(cache *cache.Cache, pokemon_name string) (Pokemon, e
 	return pokemon, nil
 }
 
-func (c *Client) GetExploreLocation(cache *cache.Cache, areaName string) (ExploreResponse, error) {
+func (c *Client) GetExploreLocation(areaName string) (ExploreResponse, error) {
 	url := c.BaseURL + "/location-area/" + areaName
 
-	responseBody, ok := cache.Get(url)
+	responseBody, ok := c.cache.Get(url)
 
 	if !ok {
 		res, err := c.GetRawResponse(url)
@@ -48,7 +50,7 @@ func (c *Client) GetExploreLocation(cache *cache.Cache, areaName string) (Explor
 			return ExploreResponse{}, err
 		}
 
-		cache.Add(url, res)
+		c.cache.Add(url, res)
 		responseBody = res
 	}
 	pokemons, err := ConvertToDomain[ExploreResponse](responseBody)
@@ -58,13 +60,13 @@ func (c *Client) GetExploreLocation(cache *cache.Cache, areaName string) (Explor
 	return pokemons, nil
 }
 
-func (c *Client) GetLocations(pageURL *string, cache *cache.Cache) (LocationResponse, error) {
+func (c *Client) GetLocations(pageURL *string) (LocationResponse, error) {
 	url := c.BaseURL + "/location-area"
 	if pageURL != nil {
 		url = *pageURL
 	}
 
-	responseBody, ok := cache.Get(url)
+	responseBody, ok := c.cache.Get(url)
 	if !ok {
 		res, err := c.GetRawResponse(url)
 		if err != nil {
@@ -72,7 +74,7 @@ func (c *Client) GetLocations(pageURL *string, cache *cache.Cache) (LocationResp
 			return LocationResponse{}, err
 		}
 
-		cache.Add(url, res)
+		c.cache.Add(url, res)
 		responseBody = res
 	}
 
